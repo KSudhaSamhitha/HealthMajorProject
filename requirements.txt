@@ -8,3 +8,5 @@ matplotlib
 seaborn
 streamlit
 joblib
+shap>=0.44.0
+lime>=0.2.0
