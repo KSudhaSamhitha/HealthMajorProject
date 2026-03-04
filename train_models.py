@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import os
+
 THRESHOLD = 0.5
 
 # -----------------------------
@@ -36,28 +37,28 @@ scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
 # Models
 # -----------------------------
 models = {
-    "Logistic Regression": LogisticRegression(
-        max_iter=1000,
-        class_weight="balanced"
-    ),
-
+    "Logistic Regression": LogisticRegression(max_iter=1000, class_weight="balanced"),
     "Random Forest": RandomForestClassifier(
-        n_estimators=200,
-        random_state=42,
-        class_weight="balanced"
+        n_estimators=200, random_state=42, class_weight="balanced"
     ),
-
-    "Gradient Boosting": GradientBoostingClassifier(
-        random_state=42
-    ),
-
+    "Gradient Boosting": GradientBoostingClassifier(random_state=42),
     "XGBoost": XGBClassifier(
-        eval_metric="logloss",
+        eval_metric="logloss", scale_pos_weight=scale_pos_weight, random_state=42
+    ),
+    # ⭐ Tuned XGBoost (Best Model)
+    "Tuned XGBoost": XGBClassifier(
+        n_estimators=500,
+        learning_rate=0.03,
+        max_depth=6,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        gamma=1,
+        reg_lambda=1,
         scale_pos_weight=scale_pos_weight,
-        random_state=42
-    )
+        eval_metric="logloss",
+        random_state=42,
+    ),
 }
-
 
 # -----------------------------
 # Train & Evaluate
@@ -71,16 +72,19 @@ for name, model in models.items():
     # apply threshold
     y_pred = (y_probs >= THRESHOLD).astype(int)
 
-    results.append({
-        "Model": name,
-        "Accuracy": accuracy_score(y_test, y_pred),
-        "Precision": precision_score(y_test, y_pred),
-        "Recall": recall_score(y_test, y_pred),
-        "F1-Score": f1_score(y_test, y_pred)
-    })
+    results.append(
+        {
+            "Model": name,
+            "Accuracy": accuracy_score(y_test, y_pred),
+            "Precision": precision_score(y_test, y_pred),
+            "Recall": recall_score(y_test, y_pred),
+            "F1-Score": f1_score(y_test, y_pred),
+        }
+    )
 
     # Save trained model
     import joblib
+
     joblib.dump(model, OUTPUT_PATH + f"{name.replace(' ', '_')}.pkl")
 
 # -----------------------------

@@ -181,6 +181,9 @@ print("="*60)
 
 X_scaled_df.to_csv(OUTPUT_PATH + "X_scaled.csv", index=False)
 y.to_csv(OUTPUT_PATH + "y.csv", index=False)
+import joblib
+joblib.dump(scaler, OUTPUT_PATH + "scaler.pkl")
+print("Scaler saved successfully")
 
 print(f"✅ X_scaled.csv saved with shape: {X_scaled_df.shape}")
 print(f"✅ y.csv saved with shape: {y.shape}")
