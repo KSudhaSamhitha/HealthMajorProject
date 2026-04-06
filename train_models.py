@@ -5,6 +5,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.calibration import CalibratedClassifierCV
 import os
 
 THRESHOLD = 0.5
@@ -33,14 +34,19 @@ X_train, X_test, y_train, y_test = train_test_split(
 # -----------------------------
 scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
 
+rf = RandomForestClassifier(
+    n_estimators=300,
+    max_depth=10,
+    min_samples_split=5,
+    class_weight="balanced_subsample",
+    random_state=42
+)
 # -----------------------------
 # Models
 # -----------------------------
 models = {
     "Logistic Regression": LogisticRegression(max_iter=1000, class_weight="balanced"),
-    "Random Forest": RandomForestClassifier(
-        n_estimators=200, random_state=42, class_weight="balanced"
-    ),
+    "Random Forest": CalibratedClassifierCV(rf, method='sigmoid', cv=3),
     "Gradient Boosting": GradientBoostingClassifier(random_state=42),
     "XGBoost": XGBClassifier(
         eval_metric="logloss", scale_pos_weight=scale_pos_weight, random_state=42

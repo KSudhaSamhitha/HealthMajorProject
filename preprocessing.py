@@ -108,6 +108,10 @@ print("="*60)
 
 # Concatenate
 combined_df = pd.concat([heart_processed, frame_processed], axis=0, ignore_index=True)
+combined_df['dataset'] = combined_df['dataset'].map({
+    'heart': 0,
+    'framingham': 1
+})
 print(f"Combined dataset shape: {combined_df.shape}")
 print(f"Combined columns: {list(combined_df.columns)}")
 
@@ -142,9 +146,17 @@ print("\n" + "="*60)
 print("FEATURE SELECTION")
 print("="*60)
 
-# Select features for modeling (exclude metadata)
+# 🔥 Remove problematic features + KEEP dataset
+remove_cols = [
+    'heart_disease',
+    'num_vessels',      # ❌ noisy (missing in framingham)
+    'st_depression',    # ❌ noisy
+    'thalassemia',
+    'dataset'          # ❌ noisy
+]
+
 feature_cols = [col for col in combined_df.columns 
-                if col not in ['heart_disease', 'dataset']]
+                if col not in remove_cols]
 
 print(f"Selected {len(feature_cols)} features for modeling:")
 for i, col in enumerate(feature_cols, 1):

@@ -1014,39 +1014,34 @@ elif menu == "📊 Risk Prediction":
 
             # Create input array - match your X_scaled.csv column order
             # IMPORTANT: Adjust this order to match your actual feature columns
-            input_data = pd.DataFrame(
-                [
-                    [
-                        age,
-                        sex_val,
-                        chest_pain_val,
-                        resting_bp,
-                        cholesterol,
-                        fasting_val,
-                        ecg_val,
-                        max_hr,
-                        exercise_val,
-                        st_depression,
-                        slope_val,
-                        num_vessels,
-                        thal_val,
-                        edu_val,
-                        smoker_val,
-                        cigs_per_day,
-                        bp_meds_val,
-                        stroke_val,
-                        hyper_val,
-                        diabetes_val,
-                        total_chol,
-                        systolic_bp,
-                        diastolic_bp,
-                        bmi,
-                        heart_rate,
-                        glucose,
-                    ]
-                ],
-                columns=X.columns,
-            )
+            input_dict = {
+                "age": age,
+                "sex": sex_val,
+                "chest_pain_type": chest_pain_val,
+                "resting_bp": resting_bp,
+                "cholesterol": cholesterol,
+                "fasting_blood_sugar": fasting_val,
+                "resting_ecg": ecg_val,
+                "max_heart_rate": max_hr,
+                "exercise_angina": exercise_val,
+                "st_slope": slope_val,
+                "education": edu_val,
+                "current_smoker": smoker_val,
+                "cigs_per_day": cigs_per_day,
+                "bp_meds": bp_meds_val,
+                "prevalent_stroke": stroke_val,
+                "prevalent_hypertension": hyper_val,
+                "diabetes": diabetes_val,
+                "total_cholesterol": total_chol,
+                "sys_bp": systolic_bp,
+                "dia_bp": diastolic_bp,
+                "bmi": bmi,
+                "heart_rate": heart_rate,
+                "glucose": glucose
+            }
+
+            input_data = pd.DataFrame([input_dict])
+            input_data = input_data[X.columns]  # ensures correct order
             input_scaled = scaler.transform(input_data)
 
             # Get prediction probability
