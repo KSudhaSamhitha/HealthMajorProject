@@ -825,7 +825,7 @@ elif menu == "📊 Risk Prediction":
             "Decision Threshold",
             0.0,
             1.0,
-            0.50,
+            0.35,
             0.01,
             key="threshold",
             label_visibility="collapsed",
@@ -1053,35 +1053,64 @@ elif menu == "📊 Risk Prediction":
             prob = model.predict_proba(input_scaled)[0][1]
 
             # Display result based on threshold
-            if prob >= threshold:
+            # 🔥 Dynamic thresholds using slider
+            high_threshold = threshold
+            moderate_threshold = threshold * 0.6
+
+            if prob >= high_threshold:
                 st.markdown(
                     f"""
                 <div style="background: rgba(239, 68, 68, 0.2); border: 2px solid #ef4444; border-radius: 10px; padding: 20px; margin: 15px 0; text-align: center;">
                     <h4 style="color: #ef4444; margin: 0;">⚠ HIGH RISK</h4>
                     <p style="color: white; font-size: 36px; font-weight: 700; margin: 10px 0;">{prob:.1%}</p>
-                    <p style="color: #94a3b8;">Probability of heart disease</p>
+                    <p style="color: #94a3b8;">High probability of heart disease</p>
                 </div>
                 """,
                     unsafe_allow_html=True,
                 )
+
+            elif prob >= moderate_threshold:
+                st.markdown(
+                    f"""
+                <div style="background: rgba(234, 179, 8, 0.2); border: 2px solid #eab308; border-radius: 10px; padding: 20px; margin: 15px 0; text-align: center;">
+                    <h4 style="color: #eab308; margin: 0;">⚠ MODERATE RISK</h4>
+                    <p style="color: white; font-size: 36px; font-weight: 700; margin: 10px 0;">{prob:.1%}</p>
+                    <p style="color: #94a3b8;">Moderate probability — clinical review recommended</p>
+                </div>
+                """,
+                    unsafe_allow_html=True,
+                )
+
             else:
                 st.markdown(
                     f"""
                 <div style="background: rgba(34, 197, 94, 0.2); border: 2px solid #22c55e; border-radius: 10px; padding: 20px; margin: 15px 0; text-align: center;">
                     <h4 style="color: #22c55e; margin: 0;">✅ LOW RISK</h4>
                     <p style="color: white; font-size: 36px; font-weight: 700; margin: 10px 0;">{prob:.1%}</p>
-                    <p style="color: #94a3b8;">Probability of heart disease</p>
+                    <p style="color: #94a3b8;">Low probability of heart disease</p>
                 </div>
                 """,
                     unsafe_allow_html=True,
                 )
+            # Determine risk label (same logic as above)
+            risk_label = (
+                "HIGH RISK" if prob >= high_threshold else
+                "MODERATE RISK" if prob >= moderate_threshold else
+                "LOW RISK"
+            )
 
-            # Show threshold info
+            # Show threshold + classification
             st.markdown(
                 f"""
             <div style="background-color: #2d3748; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                <p style="color: #94a3b8; margin: 0;">Current threshold: <span style="color: white; font-weight: 600;">{threshold:.2f}</span></p>
-                <p style="color: #94a3b8; margin: 5px 0 0 0;">Classification: <span style="color: white;">{"High Risk" if prob >= threshold else "Low Risk"}</span></p>
+                <p style="color: #94a3b8; margin: 0;">
+                    Current threshold: 
+                    <span style="color: white; font-weight: 600;">{threshold:.2f}</span>
+                </p>
+                <p style="color: #94a3b8; margin: 5px 0 0 0;">
+                    Classification: 
+                    <span style="color: white; font-weight: 600;">{risk_label}</span>
+                </p>
             </div>
             """,
                 unsafe_allow_html=True,
