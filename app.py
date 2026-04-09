@@ -419,10 +419,35 @@ X, y = load_data()
 @st.cache_data
 def compute_shap(sample):
     model = load_model()
-    explainer = shap.Explainer(model)
+
+    # 🔥 Extract base model (fix for CalibratedClassifierCV)
+    if hasattr(model, "calibrated_classifiers_"):
+        base_model = model.calibrated_classifiers_[0].estimator
+    else:
+        base_model = model
+
+    # ✅ Use TreeExplainer (best for Random Forest)
+    explainer = shap.TreeExplainer(base_model)
+
     shap_values = explainer(sample)
+
     return shap_values
 
+def get_feature_importance(model):
+    try:
+        if hasattr(model, "feature_importances_"):
+            return model.feature_importances_
+
+        elif hasattr(model, "calibrated_classifiers_"):
+            return model.calibrated_classifiers_[0].estimator.feature_importances_
+
+        elif hasattr(model, "base_estimator"):
+            return model.base_estimator.feature_importances_
+
+    except:
+        pass
+
+    return None
 
 # -------------------------
 # HOME PAGE
@@ -1172,9 +1197,13 @@ elif menu == "📈 Model Comparison":
     # ===========================
     try:
         df = pd.read_csv("outputs/results/model_comparison.csv")
-
+        # st.write("Loaded Data:", df)
+        # st.write("Columns:", df.columns)
         # Clean column names - remove any spaces and standardize
-        df.columns = df.columns.str.strip().str.replace(" ", "_").str.replace("-", "_")
+        df.columns = [col.strip().replace("-", "_").replace(" ", "_") for col in df.columns]
+
+        # # ✅ Debug (temporary)
+        # st.write("Final DF:", df)
 
         # Define metric mappings to handle different possible column names
         metric_mapping = {
@@ -1272,7 +1301,7 @@ elif menu == "📈 Model Comparison":
         if metric in display_df.columns:
             max_val = display_df[metric].max()
             display_df[metric] = display_df[metric].apply(
-                lambda x: f"⭐ {x:.1f}%" if x == max_val else f"{x:.1f}%"
+                lambda x: f"⭐ {x:.2%}%" if x == max_val else f"{x:.2%}%"
             )
 
     st.dataframe(display_df, width="stretch")
@@ -1322,7 +1351,7 @@ elif menu == "📈 Model Comparison":
                         f"""
                     <div style="margin-top: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                            <span>{star}{value:.1f}%</span>
+                            <span>{star}{value:.2%}%</span>
                         </div>
                         <div style="background-color: #334155; height: 8px; border-radius: 4px;">
                             <div style="width: {value}%; background-color: {color}; height: 8px; border-radius: 4px;"></div>
@@ -1354,7 +1383,7 @@ elif menu == "📈 Model Comparison":
             x="Model",
             y=selected_metric,
             color="Model",
-            text=df[selected_metric].round(1),
+            text=(df[selected_metric] * 100).round(2),  # ✅ FIXED
             title=f"{metric_display_names[selected_metric]} by Model",
             color_discrete_sequence=px.colors.qualitative.Bold,
         )
@@ -1469,7 +1498,17 @@ elif menu == "🔍 Explainability":
 
     st.markdown("## Feature Importance")
 
-    importance = model.feature_importances_
+    importance = get_feature_importance(model)
+
+    if importance is not None:
+        feat_df = pd.DataFrame({
+            "Feature": X.columns,
+            "Importance": importance
+        }).sort_values("Importance", ascending=False).head(10)
+
+        # plot
+    else:
+        st.warning("Feature importance not available for this model")
 
     feat_df = (
         pd.DataFrame({"Feature": X.columns, "Importance": importance})
@@ -1507,13 +1546,14 @@ In cardiovascular risk prediction, factors like **age, blood pressure, BMI, chol
         with st.spinner("Generating SHAP explanations..."):
             shap_values = compute_shap(sample)
 
-        # Select SHAP values for the positive class (Heart Disease)
-        shap_class1 = shap_values[:, :, 1]
+        # ✅ FIXED VERSION
+        if hasattr(shap_values, "values") and shap_values.values.ndim == 3:
+            shap_class1 = shap_values[:, :, 1]
+        else:
+            shap_class1 = shap_values
 
         fig, ax = plt.subplots()
-
         shap.plots.beeswarm(shap_class1, show=False)
-
         st.pyplot(fig)
 
     except Exception as e:
